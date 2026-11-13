@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusAPI — 一个入口，接通主流大模型</title>
+<meta name="description" content="NexusAPI 是多模型 API 网关：按量付费、兼容 Anthropic 与 OpenAI 双格式，Claude Code、Cherry Studio 等工具直连，每笔用量明细可查。">
+<!--
+  NexusAPI 门面页 v2（2026-11-13 重设计）
+  单文件、零外部依赖（无 CDN 字体/框架，大陆打开不依赖第三方），Logo 走 jsDelivr。
+  STATION_URL = https://api.hgapi.de5.net（已填）。托管后把本页网址填进
+  New API 后台「首页内容」即可整页嵌入；也可直接部署在站点同服务器上。
+  联系方式用户说“之后再说”，页脚不放客服信息。
+-->
+<style>
+  :root{
+    --bg:#050a14; --bg2:#081120; --panel:rgba(148,184,255,.055); --panel2:rgba(148,184,255,.09);
+    --line:rgba(120,170,255,.16); --line2:rgba(120,170,255,.28);
+    --cyan:#2ee6d6; --blue:#38bdf8; --violet:#818cf8;
+    --text:#eef4ff; --muted:#a5b6d3; --dim:#7083a3;
+    --radius:18px; --max:1120px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  ::selection{background:rgba(46,230,214,.28)}
+  a{color:inherit;text-decoration:none}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+
+  /* 背景层：光晕 + 网格 + 节点画布 */
+  .bgfx{position:fixed;inset:0;z-index:-2;background:
+    radial-gradient(820px 480px at 18% -8%,rgba(56,189,248,.17),transparent 62%),
+    radial-gradient(760px 520px at 88% 6%,rgba(129,140,248,.14),transparent 60%),
+    radial-gradient(900px 700px at 50% 115%,rgba(46,230,214,.09),transparent 62%),
+    linear-gradient(180deg,#050a14,#060c18 45%,#050a14)}
+  .bgfx::after{content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(120,170,255,.05) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(120,170,255,.05) 1px,transparent 1px);
+    background-size:56px 56px;
+    -webkit-mask-image:radial-gradient(ellipse 90% 55% at 50% 0%,#000 30%,transparent 78%);
+            mask-image:radial-gradient(ellipse 90% 55% at 50% 0%,#000 30%,transparent 78%)}
+  #nodes{position:fixed;inset:0;z-index:-1;opacity:.55;pointer-events:none}
+
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+  /* 顶栏 */
+  header{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    background:rgba(5,10,20,.66);border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:66px;max-width:var(--max);margin:0 auto;padding:0 24px}
+  .brand{display:flex;align-items:center;gap:11px;font-size:20px;font-weight:800;letter-spacing:.3px}
+  .brand img{width:36px;height:36px;border-radius:10px;box-shadow:0 0 0 1px var(--line2),0 6px 18px rgba(46,230,214,.22)}
+  .brand em{font-style:normal;background:linear-gradient(90deg,var(--cyan),var(--blue));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .navlinks{display:flex;gap:30px;font-size:14px;color:var(--muted)}
+  .navlinks a:hover{color:var(--text)}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:999px;font-size:14px;
+    border:1px solid var(--line2);color:var(--text);transition:.22s;background:rgba(148,184,255,.04)}
+  .btn:hover{border-color:var(--cyan);transform:translateY(-1px)}
+  .btn.solid{background:linear-gradient(92deg,var(--cyan),var(--blue));color:#03222b;font-weight:800;border:none;
+    box-shadow:0 8px 26px rgba(46,200,230,.32)}
+  .btn.solid:hover{box-shadow:0 10px 32px rgba(46,200,230,.45)}
+  .btn.big{padding:13px 30px;font-size:15px}
+  .nav .btn{padding:8px 18px}
+  .nav .btn + .btn{margin-left:9px}
+
+  /* Hero */
+  .hero{text-align:center;padding:88px 0 30px;position:relative}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
+    border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 15px}
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan);
+    animation:pulse 2.2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .hero h1{font-size:clamp(38px,6vw,64px);line-height:1.16;font-weight:900;letter-spacing:-.5px;margin:26px 0 0}
+  .hero h1 .grad{background:linear-gradient(92deg,#2ee6d6 5%,#38bdf8 52%,#818cf8 95%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero .lead{color:var(--muted);font-size:clamp(15px,2vw,18px);max-width:640px;margin:22px auto 0}
+  .hero .lead b{color:var(--text);font-weight:600}
+  .cta{display:flex;gap:13px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+
+  .addr{margin:38px auto 0;max-width:600px;display:flex;align-items:center;gap:10px;text-align:left;
+    background:rgba(6,14,28,.82);border:1px solid var(--line2);border-radius:14px;padding:11px 11px 11px 18px;
+    box-shadow:0 18px 44px rgba(0,0,0,.42),inset 0 1px 0 rgba(160,210,255,.09)}
+  .addr .tag{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--cyan);
+    border:1px solid rgba(46,230,214,.4);padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .addr code{flex:1;font-size:14.5px;color:#c9f5ef;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .addr button{border:none;cursor:pointer;background:linear-gradient(92deg,var(--cyan),var(--blue));color:#03222b;
+    font-weight:700;border-radius:9px;padding:9px 16px;font-size:13px;white-space:nowrap;transition:.2s}
+  .addr button:hover{filter:brightness(1.1)}
+  .addrhint{font-size:12.5px;color:var(--dim);margin-top:11px}
+
+  /* 终端示意 */
+  .term{max-width:720px;margin:44px auto 0;text-align:left;border-radius:16px;overflow:hidden;
+    border:1px solid var(--line);background:rgba(5,11,22,.88);
+    box-shadow:0 30px 70px rgba(0,0,0,.5)}
+  .term .bar{display:flex;align-items:center;gap:7px;padding:11px 15px;border-bottom:1px solid var(--line);background:rgba(148,184,255,.04)}
+  .term .bar i{width:11px;height:11px;border-radius:50%;display:block}
+  .term .bar span{margin-left:8px;font-size:12px;color:var(--dim)}
+  .term pre{padding:18px 20px 20px;font-size:13.5px;line-height:1.85;color:#b9cbe8;overflow-x:auto}
+  .term .k{color:#7dd3fc}.term .s{color:#5eead4}.term .c{color:#5b6f92}.term .p{color:#2ee6d6}
+
+  /* 兼容工具 */
+  .tools{margin:52px auto 0;text-align:center}
+  .tools p{font-size:12.5px;letter-spacing:2px;color:var(--dim);margin-bottom:16px}
+  .tools .row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+  .chip{font-size:14px;color:var(--muted);border:1px solid var(--line);background:var(--panel);
+    padding:8px 18px;border-radius:999px;transition:.2s}
+  .chip:hover{color:var(--text);border-color:var(--line2);transform:translateY(-2px)}
+
+  section{margin-top:96px}
+  .shead{text-align:center;max-width:620px;margin:0 auto 38px}
+  .shead .kick{font-size:12.5px;font-weight:700;letter-spacing:2.5px;color:var(--cyan);text-transform:uppercase}
+  .shead h2{font-size:clamp(26px,3.6vw,34px);font-weight:850;margin-top:10px}
+  .shead p{color:var(--muted);font-size:15px;margin-top:10px}
+
+  /* 卖点卡 */
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px;transition:.25s;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(46,230,214,.5),transparent);opacity:0;transition:.25s}
+  .card:hover{transform:translateY(-4px);border-color:var(--line2);background:var(--panel2)}
+  .card:hover::before{opacity:1}
+  .ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;margin-bottom:15px;
+    background:linear-gradient(140deg,rgba(46,230,214,.16),rgba(56,189,248,.1));border:1px solid var(--line2)}
+  .ic svg{width:23px;height:23px;stroke:var(--cyan);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .card h3{font-size:17px;margin-bottom:7px}
+  .card p{color:var(--muted);font-size:14.5px}
+  .card code{background:rgba(46,230,214,.1);color:#5eead4;padding:1px 7px;border-radius:6px;font-size:13px}
+
+  /* 三步 */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:step}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:26px;position:relative}
+  .step .n{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:850;font-size:16px;
+    color:#03222b;background:linear-gradient(135deg,var(--cyan),var(--blue));box-shadow:0 8px 20px rgba(46,200,230,.3);margin-bottom:15px}
+  .step h3{font-size:16.5px;margin-bottom:7px}
+  .step p{color:var(--muted);font-size:14.5px}
+  .step p code{background:rgba(46,230,214,.1);color:#5eead4;padding:1px 7px;border-radius:6px;font-size:13px}
+
+  /* 链接横幅（原定价表样式已随价格表下线移除） */
+  .tablewrap{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:rgba(7,13,26,.75)}
+  table{width:100%;border-collapse:collapse;font-size:14.5px}
+  th,td{padding:15px 20px;text-align:left}
+  thead th{color:var(--dim);font-size:12.5px;letter-spacing:1.5px;font-weight:700;background:rgba(148,184,255,.045);
+    border-bottom:1px solid var(--line)}
+  tbody tr{border-bottom:1px solid rgba(120,170,255,.08);transition:.15s}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:rgba(148,184,255,.05)}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap;color:#d7e6ff}
+  td.num b{color:var(--cyan);font-weight:700}
+  .mname{font-weight:650}
+  .mtag{font-size:11px;color:var(--blue);border:1px solid rgba(56,189,248,.4);border-radius:5px;
+    padding:2px 7px;margin-left:8px;vertical-align:2px;white-space:nowrap}
+  .note{font-size:13px;color:var(--dim);margin-top:14px;text-align:center}
+  .pricebtn{text-align:center;margin-top:22px}
+
+  /* FAQ */
+  .faq{max-width:780px;margin:0 auto}
+  details{border:1px solid var(--line);border-radius:14px;background:var(--panel);margin-top:11px;overflow:hidden}
+  details[open ]{border-color:var(--line2)}
+  summary{cursor:pointer;list-style:none;padding:17px 21px;font-size:15.5px;font-weight:650;
+    display:flex;justify-content:space-between;align-items:center;gap:12px}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--cyan);font-size:21px;font-weight:400;transition:.25s;line-height:1}
+  details[open ] summary::after{transform:rotate(45deg)}
+  details .a{padding:0 21px 18px;color:var(--muted);font-size:14.5px}
+  details .a code{background:rgba(46,230,214,.1);color:#5eead4;padding:1px 7px;border-radius:6px;font-size:13px}
+
+  /* 底部 CTA */
+  .final{margin-top:96px;text-align:center;border:1px solid var(--line2);border-radius:24px;
+    padding:52px 24px;background:
+      radial-gradient(560px 260px at 50% -30%,rgba(56,189,248,.16),transparent 65%),
+      var(--panel)}
+  .final h2{font-size:clamp(24px,3.4vw,32px);font-weight:850}
+  .final p{color:var(--muted);margin:12px auto 26px;max-width:480px;font-size:15px}
+
+  footer{margin-top:64px;padding:26px 0 40px;border-top:1px solid var(--line);
+    color:var(--dim);font-size:13px;text-align:center}
+  footer .fl{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:8px;color:var(--muted);font-weight:700}
+  footer .fl img{width:22px;height:22px;border-radius:6px}
+
+  .rv{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+  /* 被站内首页以 iframe 嵌入时（来源页是站域名）：站外壳已有顶栏，本页顶栏隐藏，避免双层导航 */
+  body.inframe header{display:none}
+  body.inframe .hero{padding-top:42px}
+  .rv.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.pill .dot{animation:none}}
+  @media (max-width:760px){
+    .navlinks{display:none}
+    .cards,.steps{grid-template-columns:1fr}
+    .hero{padding:58px 0 10px}
+    th,td{padding:12px 13px}
+    .addr .tag{display:none}
+    section{margin-top:70px}
+  }
+</style>
+</head>
+<body>
+<div class="bgfx"></div>
+<canvas id="nodes"></canvas>
+
+<header>
+  <div class="nav">
+    <a class="brand" href="#" data-go="/">
+      <img src="https://cdn.jsdelivr.net/gh/cleesakine-droid/station-assets@main/logo.svg" alt="NexusAPI">
+      Nexus<em>API</em>
+    </a>
+    <nav class="navlinks">
+      <a href="#features">特点</a><a href="#start">开始使用</a><a href="tutorial.html">接入教程</a><a href="#faq">常见问题</a><a href="#" data-go="/pricing">模型价格</a>
+    </nav>
+    <div>
+      <a class="btn" href="#" data-go="/sign-in">登录</a>
+      <a class="btn solid" href="#" data-go="/sign-up">免费注册</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <span class="pill"><span class="dot"></span>多模型统一网关 · 按量计费</span>
+    <h1>一个入口<br>接通<span class="grad">主流大模型</span></h1>
+    <p class="lead">Claude、GPT、Gemini、DeepSeek 等模型汇聚到一个接口地址。<br>
+      <b>按量计费</b>，用多少扣多少，每笔用量明细可查。<b>Claude Code、Cherry Studio</b> 等工具改个地址就能直连。</p>
+    <div class="cta">
+      <a class="btn solid big" href="#" data-go="/sign-up">立即注册 →</a>
+      <a class="btn big" href="tutorial.html">接入教程</a>
+    </div>
+    <div class="addr">
+      <span class="tag">BASE URL</span>
+      <code id="apiAddr">https://api.hgapi.de5.net</code>
+      <button type="button" id="copyBtn" onclick="copyAddr()">复制</button>
+    </div>
+    <p class="addrhint">把这个地址填进工具的 Base URL 一栏，配上控制台创建的令牌即可调用。</p>
+
+    <div class="term" aria-hidden="true">
+      <div class="bar"><i style="background:#f87171"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i><span>Claude Code — 环境变量配置</span></div>
+      <pre><span class="c"># 两行配置，切到 NexusAPI</span>
+<span class="k">export</span> <span class="p">ANTHROPIC_BASE_URL</span>=<span class="s">"https://api.hgapi.de5.net"</span>
+<span class="k">export</span> <span class="p">ANTHROPIC_AUTH_TOKEN</span>=<span class="s">"sk-你的令牌"</span>
+<span class="k">claude</span>   <span class="c"># 照常使用，计费走站内余额</span></pre>
+    </div>
+
+    <div class="tools">
+      <p>兼 容 工 具</p>
+      <div class="row">
+        <span class="chip">Claude Code</span><span class="chip">Codex</span><span class="chip">Cline</span>
+        <span class="chip">Cherry Studio</span><span class="chip">ChatBox</span><span class="chip">CC Switch</span>
+        <span class="chip">curl / Python SDK</span>
+      </div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="shead rv">
+      <div class="kick">Features</div>
+      <h2>为什么用 NexusAPI</h2>
+      <p>省掉每个模型各开一个账号、各绑一张外币卡的麻烦，一个账户全搞定。</p>
+    </div>
+    <div class="cards">
+      <div class="card rv">
+        <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15.5 9.2c-.7-1-2-1.5-3.5-1.5-2 0-3.4 1.1-3.4 2.6 0 3.6 7 1.8 7 4.5 0 1.5-1.6 2.5-3.6 2.5-1.6 0-3-.6-3.8-1.6"/></svg></div>
+        <h3>计价透明</h3>
+        <p>每次调用按实际 Token 用量实时扣费，输入、输出、缓存读取分开计价。余额和每一笔用量明细在控制台随时可查，没有打包暗扣。</p>
+      </div>
+      <div class="card rv">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 19V9M9.5 19V5M15 19v-8M20 19V7"/><path d="M3 19h18"/></svg></div>
+        <h3>按量付费</h3>
+        <p>按实际消耗的 Token 扣费，用多少付多少，没有月费绑架。轻度使用一个月可能就几块钱。</p>
+      </div>
+      <div class="card rv">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 5l-3 14"/></svg></div>
+        <h3>双格式标准接口</h3>
+        <p>同时兼容 Anthropic 与 OpenAI 两套格式。工具填 <code>/v1</code> 或 Claude 原生地址都能通，换工具不用换站。</p>
+      </div>
+      <div class="card rv">
+        <div class="ic"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="2.2"/><circle cx="18.5" cy="5.5" r="2.2"/><circle cx="18.5" cy="18.5" r="2.2"/><path d="M7.5 10.8l8.8-4M7.5 13.2l8.8 4"/></svg></div>
+        <h3>一个令牌走全站</h3>
+        <p>控制台创建一个 <code>sk-</code> 令牌即可调用站内全部模型，随时可查用量、可停用，泄露了删掉重建就行。</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="shead rv">
+      <div class="kick">Get Started</div>
+      <h2>三步开始使用</h2>
+      <p>不用装任何新软件，你常用的工具照常用，只改地址和令牌两处。</p>
+    </div>
+    <div class="steps">
+      <div class="step rv"><div class="n">1</div><h3>注册账号</h3><p>点右上角注册，几十秒建好账号，进入控制台。</p></div>
+      <div class="step rv"><div class="n">2</div><h3>钱包充值</h3><p>按量扣费、先充后用。充多少用多少，余额不足随时再充。</p></div>
+      <div class="step rv"><div class="n">3</div><h3>创建令牌接入</h3><p>在令牌页新建 <code>sk-</code> 令牌，填进 Claude Code 或 Cherry Studio，马上开跑。</p></div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="final rv" style="margin-top:0">
+      <h2>模型与价格，在站内定价页看最新</h2>
+      <p>首页不列价目表 — 模型上下线和价格调整都以站内定价页的实时数据为准，避免这里写死的价格过期对不上。</p>
+      <a class="btn big" href="#" data-go="/pricing">打开站内定价页 →</a>
+    </div>
+  </section>
+
+  <section id="tutorial">
+    <div class="shead rv">
+      <div class="kick">Tutorial</div>
+      <h2>各类工具怎么配置</h2>
+      <p>完整教程单独放在教程页里，首页只留入口 — 每个工具的填法、截图位置和常见报错都在那页，按工具找自己的那节就行。</p>
+    </div>
+    <div class="steps">
+      <div class="step rv"><h3>编程工具</h3><p>Claude Code、Codex、Cline / Continue — 环境变量与配置文件填法。</p></div>
+      <div class="step rv"><h3>聊天客户端</h3><p>Cherry Studio、ChatBox — 设置页里三个格子：地址、令牌、模型名。</p></div>
+      <div class="step rv"><h3>代码调用</h3><p>curl 与 Python SDK 示例，复制改令牌就能跑。</p></div>
+    </div>
+    <div class="pricebtn"><a class="btn solid big" href="tutorial.html">打开接入教程 →</a></div>
+  </section>
+
+  <section id="faq">
+    <div class="shead rv">
+      <div class="kick">FAQ</div>
+      <h2>常见问题</h2>
+    </div>
+    <div class="faq rv">
+      <details>
+        <summary>充值未到账 / 充值遇到问题怎么办？</summary>
+        <div class="a">先别重复支付，避免重复扣款。保留好支付成功截图、账号名与支付时间、金额，通过站内公告的联系方式反馈，核对后会尽快处理。</div>
+      </details>
+      <details>
+        <summary>令牌填进工具后调用报错？</summary>
+        <div class="a">先对三样：Base URL 是否为 <code>https://api.hgapi.de5.net</code>（OpenAI 格式工具填 <code>/v1</code> 版本地址）、令牌是否完整复制、所选模型名是否与定价页一致。三样都对还报错，再看控制台的使用日志，里面有每次请求的结果。</div>
+      </details>
+      <details>
+        <summary>余额是怎么扣的？</summary>
+        <div class="a">每次请求结束按实际 Token 用量 × 模型单价实时扣除，输入、输出、缓存读取分开计价。控制台的使用日志里每一笔都可查，不存在打包暗扣。</div>
+      </details>
+    </div>
+  </section>
+
+  <div class="final rv">
+    <h2>两分钟，接上你的第一个模型</h2>
+    <p>注册、充值、建令牌 — 然后把地址填进你已经在用的工具里，就这么简单。</p>
+    <a class="btn solid big" href="#" data-go="/sign-up">免费注册 →</a>
+  </div>
+
+  <footer>
+    <div class="fl"><img src="https://cdn.jsdelivr.net/gh/cleesakine-droid/station-assets@main/logo.svg" alt="">NexusAPI</div>
+    多模型 API 网关 · 按量付费 · 用量透明
+    <div style="margin-top:9px;font-size:12px">基于 <a href="https://github.com/QuantumNous/new-api" target="_blank" rel="noopener" style="color:var(--dim);text-decoration:underline">New API</a> 开发</div>
+  </footer>
+
+</div>
+
+<script>
+  /* 嵌入检测：被 api.hgapi.de5.net 的页面嵌进来时加 inframe（隐藏本页顶栏） */
+  if (document.referrer && document.referrer.indexOf('api.hgapi.de5.net') > -1) {
+    document.body.classList.add('inframe');
+  }
+  var STATION_URL = "https://api.hgapi.de5.net";
+  document.querySelectorAll('[data-go]').forEach(function(a){
+    a.href = STATION_URL + a.getAttribute('data-go');
+    a.target = '_top'; /* 本页被站内以 iframe 嵌入时，跳站内页面必须跳出框架整页打开，不能嵌套在框里 */
+  });
+  function copyAddr(){
+    var done=function(){var b=document.getElementById('copyBtn');b.textContent='已复制 ✓';
+      setTimeout(function(){b.textContent='复制'},1600)};
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(STATION_URL).then(done).catch(done);
+    } else {
+      var t=document.createElement('textarea');t.value=STATION_URL;document.body.appendChild(t);
+      t.select();try{document.execCommand('copy')}catch(e){}document.body.removeChild(t);done();
+    }
+  }
+  /* 滚动渐入 */
+  if('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){
+      if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
+    document.querySelectorAll('.rv').forEach(function(el){io.observe(el)});
+  } else {
+    document.querySelectorAll('.rv').forEach(function(el){el.classList.add('in')});
+  }
+  /* Hero 节点网络背景（轻量，节点连线呼应 Logo） */
+  (function(){
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var cv=document.getElementById('nodes'),ctx=cv.getContext('2d'),W,H,pts=[],mx=-999,my=-999;
+    function resize(){W=cv.width=window.innerWidth;H=cv.height=Math.min(window.innerHeight*1.15,1100);
+      var n=Math.min(64,Math.floor(W*H/26000));pts=[];
+      for(var i=0;i<n;i++)pts.push({x:Math.random()*W,y:Math.random()*H,
+        vx:(Math.random()-.5)*.28,vy:(Math.random()-.5)*.28,r:Math.random()*1.6+.7});}
+    window.addEventListener('resize',resize);resize();
+    window.addEventListener('pointermove',function(e){mx=e.clientX;my=e.clientY});
+    (function loop(){
+      ctx.clearRect(0,0,W,H);
+      for(var i=0;i<pts.length;i++){var p=pts[i];
+        p.x+=p.vx;p.y+=p.vy;
+        if(p.x<0||p.x>W)p.vx*=-1; if(p.y<0||p.y>H)p.vy*=-1;
+        ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);
+        ctx.fillStyle='rgba(94,234,212,.65)';ctx.fill();
+        for(var j=i+1;j<pts.length;j++){var q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=dx*dx+dy*dy;
+          if(d<16900){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);
+            ctx.strokeStyle='rgba(56,189,248,'+(0.13*(1-d/16900)).toFixed(3)+')';ctx.lineWidth=1;ctx.stroke();}}
+        var mdx=p.x-mx,mdy=p.y-my,md=mdx*mdx+mdy*mdy;
+        if(md<32400){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(mx,my);
+          ctx.strokeStyle='rgba(46,230,214,'+(0.2*(1-md/32400)).toFixed(3)+')';ctx.stroke();}
+      }
+      requestAnimationFrame(loop);
+    })();
+  })();
+</script>
+</body>
+</html>

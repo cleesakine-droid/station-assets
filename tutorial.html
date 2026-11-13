@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>接入教程 — NexusAPI</title>
+<meta name="description" content="NexusAPI 接入教程：Claude Code、Codex、Cline、Cherry Studio、ChatBox、curl 与 Python SDK 的配置方法。">
+<!--
+  NexusAPI 接入教程页（与门面主页同目录托管：index.html + tutorial.html 一起放）
+  这里是各类工具配置的正式落点：站内「文档地址」也可直接链到本页。
+  地址口径：Anthropic 格式 = https://api.hgapi.de5.net ；OpenAI 格式 = https://api.hgapi.de5.net/v1
+  不写价格、不写币种（站内各页以美元符号展示，教程只讲配置）。
+-->
+<style>
+  :root{--bg:#050a14;--panel:rgba(148,184,255,.055);--line:rgba(120,170,255,.16);--line2:rgba(120,170,255,.3);
+    --cyan:#2ee6d6;--blue:#38bdf8;--text:#eef4ff;--muted:#a5b6d3;--dim:#7083a3}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:radial-gradient(760px 420px at 15% -6%,rgba(56,189,248,.14),transparent 60%),
+    radial-gradient(700px 460px at 90% 0%,rgba(129,140,248,.11),transparent 60%),var(--bg);
+    color:var(--text);line-height:1.7;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:var(--cyan);text-decoration:none}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:rgba(46,230,214,.09);
+    color:#5eead4;padding:1px 7px;border-radius:6px;font-size:.92em;word-break:break-all}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px 70px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .brand{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800;color:var(--text)}
+  .brand img{width:34px;height:34px;border-radius:9px}
+  .back{font-size:14px;color:var(--muted);border:1px solid var(--line);padding:8px 17px;border-radius:999px}
+  .back:hover{color:var(--text);border-color:var(--line2)}
+  h1{font-size:clamp(28px,4.6vw,40px);font-weight:900;margin-top:26px}
+  .lead{color:var(--muted);margin-top:12px;font-size:15.5px}
+  .prep{margin-top:26px;border:1px solid var(--line2);border-radius:16px;background:var(--panel);padding:20px 22px}
+  .prep h2{font-size:16px;margin-bottom:9px}
+  .prep ol{padding-left:20px;color:var(--muted);font-size:14.5px}
+  .prep b{color:var(--text)}
+  section{margin-top:44px}
+  section>h2{font-size:22px;display:flex;align-items:center;gap:11px}
+  section>h2 .no{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:14px;color:#03222b;
+    background:linear-gradient(135deg,var(--cyan),var(--blue));font-weight:850;flex:none}
+  section>p{color:var(--muted);font-size:14.5px;margin:10px 0 0}
+  .box{margin-top:14px;border:1px solid var(--line);border-radius:14px;background:rgba(5,11,22,.85);overflow:hidden}
+  .box .bar{padding:9px 15px;font-size:12px;color:var(--dim);border-bottom:1px solid var(--line);background:rgba(148,184,255,.04)}
+  .box pre{padding:16px 18px;font-size:13.5px;line-height:1.85;color:#b9cbe8;overflow-x:auto;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .box pre code{background:none;padding:0;color:inherit;font-size:inherit}
+  .k{color:#7dd3fc}.s{color:#5eead4}.c{color:#5b6f92}.p{color:#2ee6d6}
+  ul.tips{margin-top:12px;padding-left:20px;color:var(--muted);font-size:14.5px}
+  ul.tips b{color:var(--text)}
+  .warn{margin-top:14px;border:1px solid rgba(251,191,36,.4);background:rgba(251,191,36,.07);
+    border-radius:14px;padding:15px 18px;font-size:14.5px;color:#fde9c0}
+  .warn b{color:#fbbf24}
+  footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--line);color:var(--dim);
+    font-size:13px;text-align:center}
+  @media(max-width:640px){.box pre{font-size:12.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <a class="brand" href="index.html"><img src="https://cdn.jsdelivr.net/gh/cleesakine-droid/station-assets@main/logo.svg" alt="">NexusAPI</a>
+    <a class="back" href="index.html">← 回主页</a>
+  </header>
+
+  <h1>接入教程</h1>
+  <p class="lead">所有工具的接法都是同一件事：<b style="color:var(--text)">把接口地址换成 NexusAPI 的，再填上你的令牌</b>。区别只在你用的工具把这两样东西放在哪里，按下面的工具找对应那一节即可。</p>
+
+  <div class="prep">
+    <h2>开始前，先备齐三样</h2>
+    <ol>
+      <li><b>账号</b>：在站内注册并登录，进控制台。</li>
+      <li><b>令牌</b>：控制台「令牌」页新建一个，形如 <code>sk-xxxxxxxx</code>，创建后完整复制保存（只完整显示一次）。</li>
+      <li><b>接口地址</b>（二选一，按工具的格式选）：Anthropic 格式 <code>https://api.hgapi.de5.net</code>；OpenAI 格式 <code>https://api.hgapi.de5.net/v1</code>。</li>
+    </ol>
+  </div>
+
+  <section>
+    <h2><span class="no">1</span>Claude Code</h2>
+    <p>走 Anthropic 格式。改环境变量两行，或者写进配置文件，二选一。</p>
+    <div class="box">
+      <div class="bar">终端（macOS / Linux）— 临时生效，关窗口失效</div>
+      <pre><code><span class="k">export</span> <span class="p">ANTHROPIC_BASE_URL</span>=<span class="s">"https://api.hgapi.de5.net"</span>
+<span class="k">export</span> <span class="p">ANTHROPIC_AUTH_TOKEN</span>=<span class="s">"sk-你的令牌"</span>
+<span class="k">claude</span></code></pre>
+    </div>
+    <div class="box">
+      <div class="bar">配置文件 ~/.claude/settings.json — 长期生效（推荐）</div>
+      <pre><code>{
+  <span class="s">"env"</span>: {
+    <span class="s">"ANTHROPIC_BASE_URL"</span>: <span class="s">"https://api.hgapi.de5.net"</span>,
+    <span class="s">"ANTHROPIC_AUTH_TOKEN"</span>: <span class="s">"sk-你的令牌"</span>
+  }
+}</code></pre>
+    </div>
+    <div class="warn"><b>最常见的坑：</b>电脑上如果还留着 <code>ANTHROPIC_API_KEY</code> 环境变量，它会抢占计费路径。接本站只用 <code>ANTHROPIC_AUTH_TOKEN</code>，把 <code>ANTHROPIC_API_KEY</code> 清空或删掉。</div>
+    <ul class="tips">
+      <li><b>Windows</b>：同样的两个变量名，在 PowerShell 里用 <code>$env:ANTHROPIC_BASE_URL="https://api.hgapi.de5.net"</code> 这样写，或直接改 settings.json，一样有效。</li>
+      <li><b>多个站来回切换</b>：用 CC Switch 管理配置，一键切换，不用来回改文件。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">2</span>Codex 与其他 OpenAI 格式工具</h2>
+    <p>走 OpenAI 格式，地址带 <code>/v1</code> 结尾，这是和 Claude Code 唯一的区别。</p>
+    <div class="box">
+      <div class="bar">通用填法</div>
+      <pre><code>Base URL : <span class="s">https://api.hgapi.de5.net/v1</span>
+API Key  : <span class="s">sk-你的令牌</span>
+Model    : <span class="s">在站内定价页查模型名，照抄</span></code></pre>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">3</span>Cline / Continue（VS Code 插件）</h2>
+    <p>在插件设置里选 API 提供方为 OpenAI Compatible（或 Anthropic），然后填三样：</p>
+    <ul class="tips">
+      <li><b>Base URL</b>：OpenAI 格式填 <code>https://api.hgapi.de5.net/v1</code>；选 Anthropic 提供方则填不带 /v1 的地址。</li>
+      <li><b>API Key</b>：你的 <code>sk-</code> 令牌。</li>
+      <li><b>Model</b>：定价页上的模型名，一字不差。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="no">4</span>Cherry Studio / ChatBox 等聊天客户端</h2>
+    <p>设置 → 模型服务 → 添加自定义提供商，同样三个格子：</p>
+    <div class="box">
+      <div class="bar">填法</div>
+      <pre><code>API 地址 : <span class="s">https://api.hgapi.de5.net/v1</span>   <span class="c">（客户端若自动补 /v1 则只填域名部分，按客户端提示来）</span>
+API Key  : <span class="s">sk-你的令牌</span>
+模型     : <span class="s">手动添加定价页上的模型名</span></code></pre>
+    </div>
+    <ul class="tips"><li>填完先点客户端里的「检查 / 测试连接」，通过了再开聊，能少走很多弯路。</li></ul>
+  </section>
+
+  <section>
+    <h2><span class="no">5</span>curl / Python SDK 自行调用</h2>
+    <div class="box">
+      <div class="bar">curl（OpenAI 格式）</div>
+      <pre><code><span class="k">curl</span> https://api.hgapi.de5.net/v1/chat/completions \
+  -H <span class="s">"Authorization: Bearer sk-你的令牌"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"model":"定价页的模型名","messages":[{"role":"user","content":"你好"}]}'</span></code></pre>
+    </div>
+    <div class="box">
+      <div class="bar">Python（openai 库，只改 base_url）</div>
+      <pre><code><span class="k">from</span> openai <span class="k">import</span> OpenAI
+client = OpenAI(base_url=<span class="s">"https://api.hgapi.de5.net/v1"</span>, api_key=<span class="s">"sk-你的令牌"</span>)</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">6</span>报错先对这四样</h2>
+    <ul class="tips">
+      <li><b>401</b>：令牌不对或没复制全 — 回控制台令牌页核对，必要时删掉重建。</li>
+      <li><b>404 / 模型不存在</b>：模型名和定价页对不上 — 照抄，别自己改大小写和版本号。</li>
+      <li><b>地址报错</b>：格式选错 — Anthropic 工具不带 <code>/v1</code>，OpenAI 工具带 <code>/v1</code>，这是最常见的填错。</li>
+      <li><b>余额不足</b>：控制台钱包看余额与使用日志，每笔扣费都有记录。</li>
+    </ul>
+  </section>
+
+  <footer>NexusAPI · 接入教程 &nbsp;|&nbsp; <a href="index.html">回主页</a> &nbsp;·&nbsp; <a href="https://api.hgapi.de5.net/pricing" target="_top">站内定价页</a><br>
+  <span style="font-size:12px">基于 <a href="https://github.com/QuantumNous/new-api" target="_blank" rel="noopener" style="color:var(--dim)">New API</a> 开发</span></footer>
+
+</div>
+</body>
+</html>
