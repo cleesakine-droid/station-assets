@@ -8,7 +8,7 @@
 <!--
   NexusAPI 门面页 v2（2026-11-13 重设计）
   单文件、零外部依赖（无 CDN 字体/框架，大陆打开不依赖第三方），Logo 走 jsDelivr。
-  STATION_URL = https://api.hgapi.de5.net（已填）。托管后把本页网址填进
+  STATION_URL = https://api.starwheel.net（已填）。托管后把本页网址填进
   New API 后台「首页内容」即可整页嵌入；也可直接部署在站点同服务器上。
   联系方式用户说“之后再说”，页脚不放客服信息。
 -->
@@ -229,7 +229,7 @@
     </div>
     <div class="addr">
       <span class="tag">BASE URL</span>
-      <code id="apiAddr">https://api.hgapi.de5.net</code>
+      <code id="apiAddr">https://api.starwheel.net</code>
       <button type="button" id="copyBtn" onclick="copyAddr()">复制</button>
     </div>
     <p class="addrhint">把这个地址填进工具的 Base URL 一栏，配上控制台创建的令牌即可调用。</p>
@@ -237,7 +237,7 @@
     <div class="term" aria-hidden="true">
       <div class="bar"><i style="background:#f87171"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i><span>Claude Code — 环境变量配置</span></div>
       <pre><span class="c"># 两行配置，切到 NexusAPI</span>
-<span class="k">export</span> <span class="p">ANTHROPIC_BASE_URL</span>=<span class="s">"https://api.hgapi.de5.net"</span>
+<span class="k">export</span> <span class="p">ANTHROPIC_BASE_URL</span>=<span class="s">"https://api.starwheel.net"</span>
 <span class="k">export</span> <span class="p">ANTHROPIC_AUTH_TOKEN</span>=<span class="s">"sk-你的令牌"</span>
 <span class="k">claude</span>   <span class="c"># 照常使用，计费走站内余额</span></pre>
     </div>
@@ -329,7 +329,7 @@
       </details>
       <details>
         <summary>令牌填进工具后调用报错？</summary>
-        <div class="a">先对三样：Base URL 是否为 <code>https://api.hgapi.de5.net</code>（OpenAI 格式工具填 <code>/v1</code> 版本地址）、令牌是否完整复制、所选模型名是否与定价页一致。三样都对还报错，再看控制台的使用日志，里面有每次请求的结果。</div>
+        <div class="a">先对三样：Base URL 是否为 <code>https://api.starwheel.net</code>（OpenAI 格式工具填 <code>/v1</code> 版本地址）、令牌是否完整复制、所选模型名是否与定价页一致。三样都对还报错，再看控制台的使用日志，里面有每次请求的结果。</div>
       </details>
       <details>
         <summary>余额是怎么扣的？</summary>
@@ -353,11 +353,11 @@
 </div>
 
 <script>
-  /* 嵌入检测：被 api.hgapi.de5.net 的页面嵌进来时加 inframe（隐藏本页顶栏） */
-  if (document.referrer && document.referrer.indexOf('api.hgapi.de5.net') > -1) {
+  /* 嵌入检测：被 api.starwheel.net 的页面嵌进来时加 inframe（隐藏本页顶栏） */
+  if (document.referrer && document.referrer.indexOf('api.starwheel.net') > -1) {
     document.body.classList.add('inframe');
   }
-  var STATION_URL = "https://api.hgapi.de5.net";
+  var STATION_URL = "https://api.starwheel.net";
   document.querySelectorAll('[data-go]').forEach(function(a){
     a.href = STATION_URL + a.getAttribute('data-go');
     a.target = '_top'; /* 本页被站内以 iframe 嵌入时，跳站内页面必须跳出框架整页打开，不能嵌套在框里 */

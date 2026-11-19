@@ -8,7 +8,7 @@
 <!--
   NexusAPI 接入教程页（与门面主页同目录托管：index.html + tutorial.html 一起放）
   这里是各类工具配置的正式落点：站内「文档地址」也可直接链到本页。
-  地址口径：Anthropic 格式 = https://api.hgapi.de5.net ；OpenAI 格式 = https://api.hgapi.de5.net/v1
+  地址口径：Anthropic 格式 = https://api.starwheel.net ；OpenAI 格式 = https://api.starwheel.net/v1
   不写价格、不写币种（站内各页以美元符号展示，教程只讲配置）。
 -->
 <style>
@@ -72,7 +72,7 @@
     <ol>
       <li><b>账号</b>：在站内注册并登录，进控制台。</li>
       <li><b>令牌</b>：控制台「令牌」页新建一个，形如 <code>sk-xxxxxxxx</code>，创建后完整复制保存（只完整显示一次）。</li>
-      <li><b>接口地址</b>（二选一，按工具的格式选）：Anthropic 格式 <code>https://api.hgapi.de5.net</code>；OpenAI 格式 <code>https://api.hgapi.de5.net/v1</code>。</li>
+      <li><b>接口地址</b>（二选一，按工具的格式选）：Anthropic 格式 <code>https://api.starwheel.net</code>；OpenAI 格式 <code>https://api.starwheel.net/v1</code>。</li>
     </ol>
   </div>
 
@@ -81,7 +81,7 @@
     <p>走 Anthropic 格式。改环境变量两行，或者写进配置文件，二选一。</p>
     <div class="box">
       <div class="bar">终端（macOS / Linux）— 临时生效，关窗口失效</div>
-      <pre><code><span class="k">export</span> <span class="p">ANTHROPIC_BASE_URL</span>=<span class="s">"https://api.hgapi.de5.net"</span>
+      <pre><code><span class="k">export</span> <span class="p">ANTHROPIC_BASE_URL</span>=<span class="s">"https://api.starwheel.net"</span>
 <span class="k">export</span> <span class="p">ANTHROPIC_AUTH_TOKEN</span>=<span class="s">"sk-你的令牌"</span>
 <span class="k">claude</span></code></pre>
     </div>
@@ -89,14 +89,14 @@
       <div class="bar">配置文件 ~/.claude/settings.json — 长期生效（推荐）</div>
       <pre><code>{
   <span class="s">"env"</span>: {
-    <span class="s">"ANTHROPIC_BASE_URL"</span>: <span class="s">"https://api.hgapi.de5.net"</span>,
+    <span class="s">"ANTHROPIC_BASE_URL"</span>: <span class="s">"https://api.starwheel.net"</span>,
     <span class="s">"ANTHROPIC_AUTH_TOKEN"</span>: <span class="s">"sk-你的令牌"</span>
   }
 }</code></pre>
     </div>
     <div class="warn"><b>最常见的坑：</b>电脑上如果还留着 <code>ANTHROPIC_API_KEY</code> 环境变量，它会抢占计费路径。接本站只用 <code>ANTHROPIC_AUTH_TOKEN</code>，把 <code>ANTHROPIC_API_KEY</code> 清空或删掉。</div>
     <ul class="tips">
-      <li><b>Windows</b>：同样的两个变量名，在 PowerShell 里用 <code>$env:ANTHROPIC_BASE_URL="https://api.hgapi.de5.net"</code> 这样写，或直接改 settings.json，一样有效。</li>
+      <li><b>Windows</b>：同样的两个变量名，在 PowerShell 里用 <code>$env:ANTHROPIC_BASE_URL="https://api.starwheel.net"</code> 这样写，或直接改 settings.json，一样有效。</li>
       <li><b>多个站来回切换</b>：用 CC Switch 管理配置，一键切换，不用来回改文件。</li>
     </ul>
   </section>
@@ -106,7 +106,7 @@
     <p>走 OpenAI 格式，地址带 <code>/v1</code> 结尾，这是和 Claude Code 唯一的区别。</p>
     <div class="box">
       <div class="bar">通用填法</div>
-      <pre><code>Base URL : <span class="s">https://api.hgapi.de5.net/v1</span>
+      <pre><code>Base URL : <span class="s">https://api.starwheel.net/v1</span>
 API Key  : <span class="s">sk-你的令牌</span>
 Model    : <span class="s">在站内定价页查模型名，照抄</span></code></pre>
     </div>
@@ -116,7 +116,7 @@ Model    : <span class="s">在站内定价页查模型名，照抄</span></code>
     <h2><span class="no">3</span>Cline / Continue（VS Code 插件）</h2>
     <p>在插件设置里选 API 提供方为 OpenAI Compatible（或 Anthropic），然后填三样：</p>
     <ul class="tips">
-      <li><b>Base URL</b>：OpenAI 格式填 <code>https://api.hgapi.de5.net/v1</code>；选 Anthropic 提供方则填不带 /v1 的地址。</li>
+      <li><b>Base URL</b>：OpenAI 格式填 <code>https://api.starwheel.net/v1</code>；选 Anthropic 提供方则填不带 /v1 的地址。</li>
       <li><b>API Key</b>：你的 <code>sk-</code> 令牌。</li>
       <li><b>Model</b>：定价页上的模型名，一字不差。</li>
     </ul>
@@ -127,7 +127,7 @@ Model    : <span class="s">在站内定价页查模型名，照抄</span></code>
     <p>设置 → 模型服务 → 添加自定义提供商，同样三个格子：</p>
     <div class="box">
       <div class="bar">填法</div>
-      <pre><code>API 地址 : <span class="s">https://api.hgapi.de5.net/v1</span>   <span class="c">（客户端若自动补 /v1 则只填域名部分，按客户端提示来）</span>
+      <pre><code>API 地址 : <span class="s">https://api.starwheel.net/v1</span>   <span class="c">（客户端若自动补 /v1 则只填域名部分，按客户端提示来）</span>
 API Key  : <span class="s">sk-你的令牌</span>
 模型     : <span class="s">手动添加定价页上的模型名</span></code></pre>
     </div>
@@ -138,7 +138,7 @@ API Key  : <span class="s">sk-你的令牌</span>
     <h2><span class="no">5</span>curl / Python SDK 自行调用</h2>
     <div class="box">
       <div class="bar">curl（OpenAI 格式）</div>
-      <pre><code><span class="k">curl</span> https://api.hgapi.de5.net/v1/chat/completions \
+      <pre><code><span class="k">curl</span> https://api.starwheel.net/v1/chat/completions \
   -H <span class="s">"Authorization: Bearer sk-你的令牌"</span> \
   -H <span class="s">"Content-Type: application/json"</span> \
   -d <span class="s">'{"model":"定价页的模型名","messages":[{"role":"user","content":"你好"}]}'</span></code></pre>
@@ -146,7 +146,7 @@ API Key  : <span class="s">sk-你的令牌</span>
     <div class="box">
       <div class="bar">Python（openai 库，只改 base_url）</div>
       <pre><code><span class="k">from</span> openai <span class="k">import</span> OpenAI
-client = OpenAI(base_url=<span class="s">"https://api.hgapi.de5.net/v1"</span>, api_key=<span class="s">"sk-你的令牌"</span>)</code></pre>
+client = OpenAI(base_url=<span class="s">"https://api.starwheel.net/v1"</span>, api_key=<span class="s">"sk-你的令牌"</span>)</code></pre>
     </div>
   </section>
 
@@ -160,7 +160,7 @@ client = OpenAI(base_url=<span class="s">"https://api.hgapi.de5.net/v1"</span>, 
     </ul>
   </section>
 
-  <footer>NexusAPI · 接入教程 &nbsp;|&nbsp; <a href="index.html">回主页</a> &nbsp;·&nbsp; <a href="https://api.hgapi.de5.net/pricing" target="_top">站内定价页</a><br>
+  <footer>NexusAPI · 接入教程 &nbsp;|&nbsp; <a href="index.html">回主页</a> &nbsp;·&nbsp; <a href="https://api.starwheel.net/pricing" target="_top">站内定价页</a><br>
   <span style="font-size:12px">基于 <a href="https://github.com/QuantumNous/new-api" target="_blank" rel="noopener" style="color:var(--dim)">New API</a> 开发</span></footer>
 
 </div>
